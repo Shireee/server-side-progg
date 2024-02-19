@@ -21,19 +21,25 @@ function saveLog(ip, date, url, code){
 const listener = function(req, res) {
     const url = decodeURIComponent(req.url); 
     const filePath = path.join(public, url);
-
-    fs.access(filePath, fs.constants.F_OK, (err) => {
-        if (err) { // handle non-existing path
-            res.writeHead(404, {'Content-type': 'text/html'});
-            res.end('404\n');
-            saveLog(req.socket.remoteAddress, new Date(), url, res.statusCode);
-        } else {
-            const readStream = fs.createReadStream(filePath);
-            res.writeHead(200);
-            readStream.pipe(res);
-            saveLog(req.socket.remoteAddress, new Date(), url, res.statusCode);
-        }
-    });
+    if (url === '/'){
+        res.writeHead(403, {'Content-type': 'text/html'});
+        res.end('403 forbidden\n');
+        saveLog(req.socket.remoteAddress, new Date(), url, res.statusCode);
+    } else {
+        fs.access(filePath, fs.constants.F_OK, (err) => {
+            if (err) { // handle non-existing path
+                res.writeHead(404, {'Content-type': 'text/html'});
+                res.end('404\n');
+                saveLog(req.socket.remoteAddress, new Date(), url, res.statusCode);
+            } else {
+                const readStream = fs.createReadStream(filePath);
+                res.writeHead(200);
+                readStream.pipe(res);
+                saveLog(req.socket.remoteAddress, new Date(), url, res.statusCode);
+            }
+        });
+    }
+    
 };
 
 // Create a server instance 
