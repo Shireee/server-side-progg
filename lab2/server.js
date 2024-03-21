@@ -1,9 +1,13 @@
 const http = require('http');
 const cluster = require('cluster');
 const numCPUs = require('os').cpus().length;
+const fs = require('node:fs');
+const path = require('path')
+
 
 const host = 'localhost';
 const port = 3000;
+const public = path.join(__dirname, 'public')
 
 let workers = [];
 
@@ -19,7 +23,7 @@ if (cluster.isMaster) {
             if (message.isFree !== undefined) {
                 this.isFree = message.isFree;
             }
-            console.log(`Master ${process.pid} received message from worker ${this.process.pid}: ${message}`);
+            console.log(`Master ${process.pid} received message from worker ${this.process.pid}`);
         });
     }
 
@@ -51,21 +55,41 @@ if (cluster.isMaster) {
     // Send initial message to master
     process.send({isFree});
 
-    // Workers can share any TCP connection
-    // In this case, it is an HTTP server
-    const server = http.createServer((req, res) => {
+    const listener = function(req, res) {
         isFree = false;
-        let result = 0;
-        for (let i = 0; i < 1e10; i++) {
-            result += i;
+        const url = decodeURIComponent(req.url); 
+        const filePath = path.join(public, url);
+        if (url === '/'){
+            setTimeout(() => {
+                res.writeHead(200, {'Content-type': 'text/html'});
+                res.end('Hello, World!\n');
+                saveLog(req.socket.remoteAddress, new Date(), url, res.statusCode);
+                isFree = true;
+                process.send({isFree});
+            }, 4000);
+        } else {
+            fs.access(filePath, fs.constants.F_OK, (err) => {
+                if (err) { // handle non-existing path
+                    res.writeHead(404, {'Content-type': 'text/html'});
+                    res.end('404\n');
+                    saveLog(req.socket.remoteAddress, new Date(), url, res.statusCode);
+                    isFree = true;
+                    process.send({isFree});
+                } else {
+                    const readStream = fs.createReadStream(filePath);
+                    res.writeHead(200);
+                    readStream.pipe(res);
+                    readStream.on('end', () => {
+                        saveLog(req.socket.remoteAddress, new Date(), url, res.statusCode);
+                        isFree = true;
+                        process.send({isFree});
+                    });
+                }
+            });
         }
-        console.log(`Request handled by worker ${process.pid}`);
-        res.writeHead(200, {'Content-type': 'text/html'});
-        res.end(`Hello from worker ${process.pid}\n`, () => {
-            isFree = true;
-            process.send({isFree});
-        });
-    });
+    };
+    
+    const server = http.createServer(listener);
 
     server.listen(port, host, () => {
         console.log(`Server listening on port: ${port}`);
@@ -85,4 +109,14 @@ if (cluster.isMaster) {
             });
         }
     });
+}
+
+
+
+// Logging function 
+function saveLog(ip, date, url, code){
+    fs.writeFile('./log.txt', 
+                JSON.stringify({ date: date, ip: ip, path: url, code: code}) + '\r\n',
+                {flag: 'a+'}, 
+                err => { err ? console.log(err) : console.log(`Logged: ${new Date()}`)})
 }
