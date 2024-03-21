@@ -1,51 +1,37 @@
-http = require('http')
-const fs = require('node:fs');
-const path = require('path')
+const http = require('http');
+const cluster = require('cluster');
+const numCPUs = require('os').cpus().length;
 
+const host = 'localhost';
+const port = 3000;
 
-host = 'localhost'
-port = 3000
+if (cluster.isMaster) {
+    console.log(`Master ${process.pid} is running`);
 
-// Define static folder 
-const public = path.join(__dirname, 'public')
-
-// Logging function 
-function saveLog(ip, date, url, code){
-    fs.writeFile('./log.txt', 
-                JSON.stringify({ date: date, ip: ip, path: url, code: code}) + '\r\n',
-                {flag: 'a+'}, 
-                err => { err ? console.log(err) : console.log(`Logged: ${new Date()}`)})
-}
-
-// Create a listener
-const listener = function(req, res) {
-    const url = decodeURIComponent(req.url); 
-    const filePath = path.join(public, url);
-    if (url === '/'){
-        res.writeHead(403, {'Content-type': 'text/html'});
-        res.end('403 forbidden\n');
-        saveLog(req.socket.remoteAddress, new Date(), url, res.statusCode);
-    } else {
-        fs.access(filePath, fs.constants.F_OK, (err) => {
-            if (err) { // handle non-existing path
-                res.writeHead(404, {'Content-type': 'text/html'});
-                res.end('404\n');
-                saveLog(req.socket.remoteAddress, new Date(), url, res.statusCode);
-            } else {
-                const readStream = fs.createReadStream(filePath);
-                res.writeHead(200);
-                readStream.pipe(res);
-                saveLog(req.socket.remoteAddress, new Date(), url, res.statusCode);
-            }
-        });
+    // Fork workers.
+    for (let i = 0; i < numCPUs; i++) {
+        cluster.fork();
     }
-    
-};
 
-// Create a server instance 
-const server = http.createServer(listener);
+    cluster.on('exit', (worker, code, signal) => {
+        console.log(`worker ${worker.process.pid} died`);
+    });
+} else {
+    // Workers can share any TCP connection
+    // In this case, it is an HTTP server
+    const server = http.createServer((req, res) => {
+        let result = 0;
+        for (let i = 0; i < 1e10; i++) {
+            result += i;
+        }
+        console.log(`Request handled by worker ${process.pid}`);
+        res.writeHead(200, {'Content-type': 'text/html'});
+        res.end(`Hello from worker ${process.pid}\n`);
+    });
 
-// Run server
-server.listen(port, host, () => {
-    console.log(`Servet listening on port: ${port}`)
-})
+    server.listen(port, host, () => {
+        console.log(`Server listening on port: ${port}`);
+    });
+
+    console.log(`Worker ${process.pid} started`);
+}
