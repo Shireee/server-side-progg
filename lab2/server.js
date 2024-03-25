@@ -1,122 +1,99 @@
 const http = require('http');
+const fs = require('node:fs');
 const cluster = require('cluster');
 const numCPUs = require('os').cpus().length;
-const fs = require('node:fs');
-const path = require('path')
+const path = require('path');
+const { saveLog } = require('./middleware/logger'); 
+require('dotenv').config()
 
 
-const host = 'localhost';
-const port = 3000;
 const public = path.join(__dirname, 'public')
-
 let workers = [];
 
 if (cluster.isMaster) {
     console.log(`Master ${process.pid} is running`);
 
     // Fork workers.
-    for (let i = 0; i < numCPUs; i++) {
-        workers[i] = cluster.fork();
+    for (let i = 0; i < numCPUs; i++) workers[i] = cluster.fork();
 
-        // Listen for messages from worker
-        workers[i].on('message', function(message) {
-            if (message.isFree !== undefined) {
-                this.isFree = message.isFree;
-            }
-            console.log(`Master ${process.pid} received message from worker ${this.process.pid}`);
-        });
-    }
-
-    cluster.on('exit', (worker, code, signal) => {
-        console.log(`worker ${worker.process.pid} died`);
-        workers = workers.filter(w => w.process.pid !== worker.process.pid);
-        if (workers.length === 0) {
-            console.log('All workers have exited, server is stopping');
-            process.exit(0);
-        }
+    // set 'exit' eventListener 
+    cluster.on('exit', (worker) => {
+        console.log(`Worker ${worker.process.pid} died`);
     });
 
     // Listen for SIGINT signal
-    process.on('SIGINT', function() {
-        console.log('Master is stopping, waiting for workers to finish');
-        let interval = setInterval(() => {
-            let allWorkersFree = workers.every(worker => worker.isFree);
-            if (allWorkersFree) {
-                clearInterval(interval);
-                for(let i=0; i<workers.length; i++) {
-                    workers[i].send('shutdown');
-                }
-            }
-        }, 1000); // check every second
+    process.on('SIGINT', () => {
+        console.log('SIGINT -> waiting for workers to finish tasks...');
+        workers.map((worker) => {
+            worker.send('shutdown');
+        });
     });
 } else {
-    let isFree = true;
+    // Check idle time
+    let isFree = null;
+    let lastRequestTime = Date.now();
+    const checkIdleTime = (lastRequestTime) => {
+        const idleTime = Date.now() - lastRequestTime;
+        if (idleTime >= process.env.TIME_TO_CLOSE || isFree === null) isFree = true;
+    }
 
-    // Send initial message to master
-    process.send({isFree});
+    setInterval(() => {
+        checkIdleTime(lastRequestTime);
+    }, 1000); 
 
-    const listener = function(req, res) {
-        isFree = false;
+    // Worker
+    console.log(`Worker ${process.pid} started`);
+
+    const server = http.createServer( (req, res) => {
         const url = decodeURIComponent(req.url); 
         const filePath = path.join(public, url);
+
         if (url === '/'){
-            setTimeout(() => {
-                res.writeHead(200, {'Content-type': 'text/html'});
-                res.end('Hello, World!\n');
+                res.writeHead(403, {'Content-type': 'text/html'});
+                res.end('Forbidden!\n');
                 saveLog(req.socket.remoteAddress, new Date(), url, res.statusCode);
-                isFree = true;
-                process.send({isFree});
-            }, 4000);
+                
+                // set request time
+                isFree = false
+                lastRequestTime = Date.now();
         } else {
             fs.access(filePath, fs.constants.F_OK, (err) => {
-                if (err) { // handle non-existing path
+                if (err) { 
                     res.writeHead(404, {'Content-type': 'text/html'});
                     res.end('404\n');
                     saveLog(req.socket.remoteAddress, new Date(), url, res.statusCode);
-                    isFree = true;
-                    process.send({isFree});
+
+                    // set request time
+                    isFree = false
+                    lastRequestTime = Date.now();
                 } else {
                     const readStream = fs.createReadStream(filePath);
                     res.writeHead(200);
                     readStream.pipe(res);
                     readStream.on('end', () => {
                         saveLog(req.socket.remoteAddress, new Date(), url, res.statusCode);
-                        isFree = true;
-                        process.send({isFree});
+
+                        // set request time
+                        isFree = false
+                        lastRequestTime = Date.now();
                     });
                 }
             });
         }
-    };
-    
-    const server = http.createServer(listener);
-
-    server.listen(port, host, () => {
-        console.log(`Server listening on port: ${port}`);
     });
 
-    console.log(`Worker ${process.pid} started`);
+    server.listen(process.env.PORT, process.env.HOST, () => {
+        console.log(`Server listening on port: ${process.env.PORT}`);
+    });
 
-    // Ignore SIGINT signal
-    process.on('SIGINT', function() {});
-
-    process.on('message', function(message) {
+    process.on('SIGINT', () => {})
+    process.on('message', (message) => {
         if (message === 'shutdown') {
-            console.log(`Worker ${process.pid} is shutting down...`);
-            server.close(() => {
-                console.log(`Worker ${process.pid} has finished tasks and is now exiting`);
-                process.exit(0);
-            });
+            setInterval(() => {
+                if (isFree) process.exit(0)
+            }, 1000);
         }
     });
 }
 
-
-
-// Logging function 
-function saveLog(ip, date, url, code){
-    fs.writeFile('./log.txt', 
-                JSON.stringify({ date: date, ip: ip, path: url, code: code}) + '\r\n',
-                {flag: 'a+'}, 
-                err => { err ? console.log(err) : console.log(`Logged: ${new Date()}`)})
-}
+//  for i in {1..100}; do    curl http://localhost:3000/CSS Zen Garden_ The Beauty of CSS Design.html  & done
