@@ -27,6 +27,9 @@ fs.readdir(partialsFolder, (err, files) => {
     });
 });
 
+handlebars.registerHelper('ifEquals', function(arg1, arg2, options) {
+    return (arg1 == arg2) ? options.fn(this) : options.inverse(this);
+});
 
 const server = http.createServer( (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
@@ -36,84 +39,122 @@ const server = http.createServer( (req, res) => {
     if (path.extname(url.pathname) === '.html') {
         filePath = path.join(__dirname, 'public',  path.basename(url.pathname, '.hbs') + '.html');
         switch(url.pathname) {
-            case '/testimonials.html':
-                fs.readFile(path.join(publicFolder, 'testimonials.hbs'), 'utf8', (err, data) => {
-                    if (err) throw err; 
-        
-                    const template = handlebars.compile(data);
-        
-                    res.writeHead(200, { 'Content-Type': 'text/html' });
-                    res.end(template());
-                });
-                break;
-            case '/services.html':
-                fs.readFile(path.join(publicFolder, 'services.hbs'), 'utf8', (err, data) => {
-                    if (err) throw err; 
-        
-                    const template = handlebars.compile(data);
-        
-                    res.writeHead(200, { 'Content-Type': 'text/html' });
-                    res.end(template());
-                });
-                break;
-            case '/pricing.html':
-                fs.readFile(path.join(publicFolder, 'pricing.hbs'), 'utf8', (err, data) => {
-                    if (err) throw err; 
-        
-                    const template = handlebars.compile(data);
-        
-                    res.writeHead(200, { 'Content-Type': 'text/html' });
-                    res.end(template());
-                });
-                break;
-            case '/portfolio.html':
-                fs.readFile(path.join(publicFolder, 'portfolio.hbs'), 'utf8', (err, data) => {
-                    if (err) throw err; 
-        
-                    const template = handlebars.compile(data);
-        
-                    res.writeHead(200, { 'Content-Type': 'text/html' });
-                    res.end(template());
-                });
-                break;
             case '/index.html':
                 fs.readFile(path.join(publicFolder, 'index.hbs'), 'utf8', (err, data) => {
                     if (err) throw err; 
         
                     const template = handlebars.compile(data);
-        
+                    const context = {
+                        activeTab: 'home'
+                    };
+
                     res.writeHead(200, { 'Content-Type': 'text/html' });
-                    res.end(template());
+                    res.end(template(context));
                 });
                 break;
-            case '/features.html':
-                fs.readFile(path.join(publicFolder, 'features.hbs'), 'utf8', (err, data) => {
-                    if (err) throw err; 
-        
-                    const template = handlebars.compile(data);
-        
-                    res.writeHead(200, { 'Content-Type': 'text/html' });
-                    res.end(template());
-                });
-                break;
-            case '/contact.html':
-                fs.readFile(path.join(publicFolder, 'contact.hbs'), 'utf8', (err, data) => {
-                    if (err) throw err; 
-        
-                    const template = handlebars.compile(data);
-        
-                    res.writeHead(200, { 'Content-Type': 'text/html' });
-                    res.end(template());
-                });
-                break;
+
             case '/about-us.html':
                 fs.readFile(path.join(publicFolder, 'about-us.hbs'), 'utf8', (err, data) => {
                     if (err) throw err; 
         
                     const template = handlebars.compile(data);
-        
+                    const context = {
+                        header: 'About Us',
+                        activeTab: 'about'
+                    };
+
                     res.writeHead(200, { 'Content-Type': 'text/html' });
-                    res.end(template());
+                    res.end(template(context));
+                });
+                break;
+            
+            case '/services.html':
+                fs.readFile(path.join(publicFolder, 'services.hbs'), 'utf8', (err, data) => {
+                    if (err) throw err; 
+        
+                    const template = handlebars.compile(data);
+                    const context = {
+                        header: 'Our Services',
+                        activeTab: 'services'
+                    };
+
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(template(context));
+                });
+                break;
+                 
+            case '/portfolio.html':
+                fs.readFile(path.join(publicFolder, 'portfolio.hbs'), 'utf8', (err, data) => {
+                    if (err) throw err; 
+        
+                    const template = handlebars.compile(data);
+                    const context = {
+                        header: 'Our Portfolio',
+                        activeTab: 'portfolio'
+                    };
+
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(template(context));
+                });
+                break;
+
+            case '/features.html':
+                fs.readFile(path.join(publicFolder, 'features.hbs'), 'utf8', (err, data) => {
+                    if (err) throw err; 
+        
+                    const template = handlebars.compile(data);
+                    const context = {
+                        header: 'Features',
+                        activeTab: 'features'
+                    };
+
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(template(context));
+                });
+                break;
+
+            case '/testimonials.html':
+                fs.readFile(path.join(publicFolder, 'testimonials.hbs'), 'utf8', (err, data) => {
+                    if (err) throw err; 
+        
+                    const template = handlebars.compile(data);
+                    const context = {
+                        header: 'Testimonials',
+                        activeTab: 'testimonials'
+                    };
+
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(template(context));
+                });
+                break;
+
+            case '/pricing.html':
+                fs.readFile(path.join(publicFolder, 'pricing.hbs'), 'utf8', (err, data) => {
+                    if (err) throw err; 
+        
+                    const template = handlebars.compile(data);
+                    const context = {
+                        header: 'Pricing',
+                        activeTab: 'pricing'
+                    };
+
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(template(context));
+                });
+                break;
+
+            case '/contact.html':
+                fs.readFile(path.join(publicFolder, 'contact.hbs'), 'utf8', (err, data) => {
+                    if (err) throw err; 
+        
+                    const template = handlebars.compile(data);
+                    const context = {
+                        header: 'Pricing',
+                        activeTab: 'contact'
+                    };
+
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(template(context));
                 });
                 break;
         }        
