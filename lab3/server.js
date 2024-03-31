@@ -2,7 +2,7 @@ const http = require('http');
 const fs = require('node:fs');
 const path = require('path');
 const handlebars = require('handlebars');
-const { handleStatic } = require('./middleware/handeStatic'); 
+const { handleStatic } = require('./middleware/handleStatic'); 
 require('dotenv').config()
 
 
