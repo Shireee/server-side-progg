@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+{{>head}}
+
+<body>
+    {{>preloader}}
+    {{>top-bar}}
+    {{>header}}
+
+    {{>banner}}
+
+    <div id="portfolio" class="section wb">
+        <div class="container">
+            <div class="section-title text-center">
+                <h3>Our Portfolio</h3>
+                <p class="lead">We build professional website templates, web design projects, material designs and UI
+                    kits. <br>Some of our awesome completed projects in below.</p>
+            </div><!-- end title -->
+        </div><!-- end container -->
+
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <nav class="portfolio-filter text-center">
+                        <ul>
+                            <li><a class="btn btn-dark btn-radius btn-brd active" href="#" data-filter="*"><span
+                                        class="oi hidden-xs" data-glyph="grid-three-up"></span> All</a></li>
+                            <li><a class="btn btn-dark btn-radius btn-brd" data-toggle="tooltip" data-placement="top"
+                                    title="5" href="#" data-filter=".cat1">Design</a></li>
+                            <li><a class="btn btn-dark btn-radius btn-brd" href="#" data-toggle="tooltip"
+                                    data-placement="top" title="12" data-filter=".cat2">Mockup</a></li>
+                            <li><a class="btn btn-dark btn-radius btn-brd" href="#" data-toggle="tooltip"
+                                    data-placement="top" title="21" data-filter=".cat3">Logos</a></li>
+                            <li><a class="btn btn-dark btn-radius btn-brd" href="#" data-toggle="tooltip"
+                                    data-placement="top" title="11" data-filter=".cat4">HTML</a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+
+            <hr class="invis">
+
+            <div id="da-thumbs" class="da-thumbs portfolio">
+                {{#each item}}
+                    <div class="post-media pitem item-w1 item-h1 cat{{this.cat}}">
+                        <a href="{{this.path}}" data-rel="prettyPhoto[gal]">
+                            <img src="{{this.path}}" alt="" class="img-responsive">
+                            <div>
+                                <h3>{{this.h3}}<small>{{this.small}}</small></h3>
+                                <i class="flaticon-unlink"></i>
+                            </div>
+                        </a>
+                    </div>
+                {{/each}}
+            </div><!-- end portfolio -->
+        </div><!-- end container -->
+    </div><!-- end section -->
+
+    {{>our-services}}
+
+    {{>testimonials}}
+    {{>footer}}
+    {{>copyrights}}
+
+    <a href="#" id="scroll-to-top" class="dmtop global-radius"><i class="fa fa-angle-up"></i></a>
+
+    <!-- ALL JS FILES -->
+    <script src="js/all.js"></script>
+    <!-- ALL PLUGINS -->
+    <script src="js/custom.js"></script>
+    <script src="js/portfolio.js"></script>
+    <script src="js/hoverdir.js"></script>
+
+</body>
+
+</html>
