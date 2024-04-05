@@ -3,7 +3,8 @@ const path = require('path');
 const { handleStatic } = require('./middleware/handleStatic'); 
 const { handlebarsInit } = require('./middleware/handlebarsInit');
 const { HBSredirect } = require('./middleware/HBSredirect');
-const { handleForm } = require('./middleware/handleForm');
+const { handleContacts } = require('./middleware/handleContacts');
+const { handleTestinomials } = require('./middleware/handleTestinomials.js');
 require('dotenv').config()
 
 
@@ -17,9 +18,14 @@ handlebarsInit(pathToPartials);
 const server = http.createServer( (req, res) => {
     // Router
     if (path.extname(req.url) === '.html') HBSredirect(req, res, public);
-    else if (req.method === 'POST') handleForm(req, res)
     else if (req.method === 'GET') handleStatic(req, res)
-
+    else if (req.method === 'POST') {
+        if (req.url === '/postTestimonials') {
+            handleTestinomials(req, res);
+        } else {
+            handleContacts(req, res);
+        }
+    }
 })
 
 server.listen(process.env.PORT, process.env.HOST, () => {

@@ -8,13 +8,14 @@ function getTestimonials(){
 }
 
 function postTestimonials(name, img_url, ocupation, title, description){
-    return db.none('INSERT INTO comments.comments(name, img_url, ocupation, title, description) VALUES(${name}, ${img_url}, ${ocupation}, ${title}, ${description})', insertData)
-        .then(() => {
-            console.log('Data inserted successfully');
-        })
-        .catch(error => {
-            console.log('Error inserting data into the database', error);
-        });
+    return db.none('INSERT INTO comments.comments(name, img_url, ocupation, title, description) VALUES(${name}, ${img_url}, ${ocupation}, ${title}, ${description})', 
+    {
+        name: name,
+        img_url: img_url,
+        ocupation: ocupation,
+        title: title,
+        description: description
+    })
 }
 
 module.exports = { getTestimonials, postTestimonials };

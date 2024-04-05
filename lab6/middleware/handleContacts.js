@@ -4,7 +4,7 @@ const csvWriter = require('csv-writer').createObjectCsvWriter;
 // Function for handling form data 
 // and write it to cvs file
 
-function handleForm(req, res) {
+function handleContacts(req, res) {
     let data = '';
     req.on('data', chunk => { data += chunk.toString() });
     req.on('end', () => {
@@ -45,4 +45,4 @@ function handleForm(req, res) {
     });
 }
 
-module.exports = { handleForm };
+module.exports = { handleContacts };
